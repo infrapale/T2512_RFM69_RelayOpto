@@ -2,10 +2,14 @@
 #include "main.h"
 #include "atask.h"
 #include "uart.h"
+#include "Rfm69Modem.h"
 
 #define  NBR_OF_RELAY_MOD     2
 #define  NBR_OF_OPT_INP       2
+#define  OPTO_MAX_RADIATE_INTERVAL   (60000)
+#define  OPTO_MIN_RADIATE_INTERVAL   (4000)
 
+extern Rfm69Modem      rfm69_modem;
 
 typedef struct
 {
@@ -16,6 +20,7 @@ typedef struct
     uart_msg_st decoded_opto;
     uart_msg_st decoded_relay;
     uart_msg_st decoded_rec;
+    uint32_t    radiate_timeout;
 } opto_ctrl_st;
 
 typedef struct
@@ -25,6 +30,7 @@ typedef struct
     uint8_t prev_val;
     char    label[16];
     uint32_t  timeout;
+    uint32_t  next_update;
 } opto_state_st;
 
 extern modem_data_st   modem_data;
@@ -32,12 +38,12 @@ extern modem_data_st   modem_data;
 opto_state_st opto[NBR_OF_RELAY_MOD][NBR_OF_OPT_INP] = 
 {
     {
-        {0,0,0,"Piha1",0},
-        {0,0,0,"Piha2",0},
+        {0,0,0,"Piha1",0,0},
+        {0,0,0,"Piha2",0,0},
     },
     {
-        {0,0,0,"Ranta1",0},
-        {0,0,0,"Ranta2",0},
+        {0,0,0,"Ranta1",0,0},
+        {0,0,0,"Ranta2",0,0},
     }
 };
 
@@ -45,9 +51,11 @@ char tx_buff[UART_BUFF_LEN] = {0};
 char rx_buff[UART_BUFF_LEN] = {0};
 
 void opto_task(void);
+void opto_radiate_task(void);
 
 //atask_st debug_print_handle = {"Debug Print    ", 5000,0, 0, 255, 0, 1, debug_print_task};
 atask_st opto_handle          = {"Opto Task      ", 100,0, 0, 255, 0, 1, opto_task};
+atask_st opto_radiate_handle  = {"Radiate Task   ", 1000,0, 0, 255, 0, 1, opto_radiate_task};
 
 opto_ctrl_st octrl = 
 {
@@ -67,7 +75,8 @@ opto_ctrl_st octrl =
         RELAY_FUNCTION, '0',
         ACTION_SET, WILD_CHAR
     },
-    .decoded_rec = {'*','*','*','*','*','*','*','*'}
+    .decoded_rec = {'*','*','*','*','*','*','*','*'},
+    .radiate_timeout = 0
 };
 
 void opto_build_uart_msg(char *buff, uart_msg_st *decod)
@@ -168,17 +177,18 @@ bool opto_process_uart_msg(uart_msg_st *decod)
     if (do_continue) if(decod->func_indx != octrl.decoded_opto.func_indx) do_continue = false;
 
     if (do_continue){
-        Serial.print("Opto value="); Serial.println(decod->value);
+        //Serial.print("Opto value="); Serial.println(decod->value);
         opto_update_io_state(decod->from_addr,decod->value);
     }
     else {
-        Serial.println("opto_process_uart_msg - FAILED");
+        //Serial.println("opto_process_uart_msg - FAILED");
     }
 }
 
 void opto_initialize(void)
 {
     atask_add_new(&opto_handle);
+    atask_add_new(&opto_radiate_handle);
 }
 
 void opto_task(void)
@@ -200,9 +210,9 @@ void opto_task(void)
             break;
         case 30:  // read opto status
             if (uart_read_uart(rx_buff) >= 10) {
-                Serial.print("rx_buff: ");  Serial.println(rx_buff);
+                //Serial.print("rx_buff: ");  Serial.println(rx_buff);
                 if (opto_decode_uart_msg(rx_buff, &octrl.decoded_rec)){
-                    Serial.println("Frame is OK");
+                    //Serial.println("Frame is OK");
                     opto_process_uart_msg(&octrl.decoded_rec);
                 }
                 opto_handle.state = 40;
@@ -225,5 +235,79 @@ void opto_task(void)
         case 200:
             opto_handle.state = 10;
             break;
+    }
+}
+void opto_radiate_change(uint8_t mindx, uint8_t oindx, uint8_t oval)
+{
+    // <EVENT;PIHA1;1>
+    char buff[40] = {0};
+    strcat(buff,"<EVENT;");
+    strcat(buff, opto[mindx][oindx].label);
+    strcat(buff, ";");
+    if(oval == 1) strcat(buff,"1>");
+    else strcat(buff,"0>");
+    Serial.println(buff);
+    rfm69_modem.radiate(buff);
+}
+
+void opto_radiate_task(void)
+{
+    static uint8_t mod_indx = 0;
+    static uint8_t opto_indx = 0;
+    bool do_radiate = false;
+
+    switch(opto_radiate_handle.state)
+    {
+        case 0:
+            opto_radiate_handle.state = 10;
+            for(mod_indx= 0; mod_indx < NBR_OF_RELAY_MOD; mod_indx++){
+                for (opto_indx= 0; opto_indx < NBR_OF_OPT_INP; opto_indx++){
+                    opto[mod_indx][opto_indx].next_update = millis() + OPTO_MAX_RADIATE_INTERVAL;
+                }
+            }
+            mod_indx = 0; opto_indx = 0;
+            break;    
+        case 10:
+            do_radiate = false;
+            if(opto[mod_indx][opto_indx].new_val != opto[mod_indx][opto_indx].prev_val)
+            {
+                opto[mod_indx][opto_indx].prev_val = opto[mod_indx][opto_indx].new_val;
+                do_radiate = true;
+                // Serial.println("Changed value");
+            }
+            if(millis() > opto[mod_indx][opto_indx].next_update){
+                do_radiate = true;
+                // Serial.println("Next update");
+            }    
+            if(do_radiate){
+
+                opto_radiate_change(mod_indx,opto_indx, opto[mod_indx][opto_indx].new_val);
+                octrl.radiate_timeout = millis() + OPTO_MIN_RADIATE_INTERVAL;
+                opto[mod_indx][opto_indx].next_update = millis() + OPTO_MAX_RADIATE_INTERVAL;
+                do_radiate = false;
+                opto_radiate_handle.state = 20;
+            }
+            if (++opto_indx >= NBR_OF_OPT_INP) {
+                opto_indx = 0;
+                if (++mod_indx >= NBR_OF_RELAY_MOD) mod_indx = 0;
+            }
+            break;    
+        case 20:
+            if(millis() > octrl.radiate_timeout) 
+            opto_radiate_handle.state = 10;
+            break;    
+        case 30:
+            opto_radiate_handle.state = 10;
+            break;    
+        case 40:
+            opto_radiate_handle.state = 10;
+            break;    
+        case 100:
+            opto_radiate_handle.state = 10;
+            break;    
+        case 200:
+            opto_radiate_handle.state = 10;
+            break;    
+
     }
 }

@@ -111,6 +111,35 @@ UART Command Syntax
             <R1Y1O*=1>    Opto 1 input is high
             <R1Y1O*=2>    Opto 2 input is high
             <R1Y1O*=3>    Opto 1 and 2 are high
+
+            <EVENT;PIHA1;1>
+
+    Event Log:
+    07:43:39.993 -> <R1Y1O*=3>
+
+        07:43:40.311 -> <Y1R1O*?*>        polling message
+        07:43:39.993 -> <R1Y1O*=3>        response from Relay module Y1
+        07:43:40.311 -> <Y2R1O*?*>        polling continues
+        07:43:40.773 -> <EVENT;Piha2;1>   radio message, debug print
+        07:43:41.624 -> <Y1R1O*?*>
+        07:43:42.917 -> <Y2R1O*?*>
+        07:43:44.207 -> <Y1R1O*?*>
+        07:43:45.517 -> <Y2R1O*?*>
+        07:43:46.827 -> <Y1R1O*?*>
+        07:43:47.805 -> <EVENT;Piha1;1>   radio message, debug print
+        07:43:48.171 -> <Y2R1O*?*>
+        07:43:49.446 -> <Y1R1O*?*>
+        07:43:50.747 -> <Y2R1O*?*>
+
+        07:43:42.917 -> <Y2R1O*?*>
+        07:43:44.207 -> <Y1R1O*?*>
+        07:43:45.517 -> <Y2R1O*?*>
+        07:43:46.827 -> <Y1R1O*?*>
+        07:43:47.805 -> <EVENT;Piha1;1>
+        07:43:48.171 -> <Y2R1O*?*>
+        07:43:49.446 -> <Y1R1O*?*>
+        07:43:50.747 -> <Y2R1O*?*>
+        07:43:52.075 -> <Y1R1O*?*>
  
 *******************************************************************************   
     General Examples:

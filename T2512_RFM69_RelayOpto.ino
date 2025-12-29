@@ -157,7 +157,7 @@ void run_100ms(void)
 
 void debug_print_task(void)
 {
-  atask_print_status(true);
-  opto_debug_print();
+//   atask_print_status(true);
+//   opto_debug_print();
 }
 
