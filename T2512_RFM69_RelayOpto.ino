@@ -79,7 +79,7 @@ void initialize_tasks(void)
 
 void setup() 
 {
-    while (!Serial); // wait until serial console is open, remove if not tethered to computer
+    //while (!Serial); // wait until serial console is open, remove if not tethered to computer
     delay(2000);
     Serial.begin(9600);
     Serial.print(__APP__); Serial.print(F(" Compiled: "));
@@ -138,7 +138,7 @@ void send_test_msg_task(void)
         case 20:
             if (millis() > delay_timeout)
             {   
-                rfm69_modem.radiate_node_json("Dock;T_bmp1;9.1;-");
+                // rfm69_modem.radiate_node_json("Dock;T_bmp1;9.1;-");
                 io_led_flash(LED_INDX_BLUE, 10);
                 delay_timeout = millis() + 4000;
                 send_test_handle.state = 30;

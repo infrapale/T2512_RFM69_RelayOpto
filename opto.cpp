@@ -239,9 +239,9 @@ void opto_task(void)
 }
 void opto_radiate_change(uint8_t mindx, uint8_t oindx, uint8_t oval)
 {
-    // <EVENT;PIHA1;1>
+    // <PIR;PIHA1;1>
     char buff[40] = {0};
-    strcat(buff,"<EVENT;");
+    strcat(buff,"<PIR;");
     strcat(buff, opto[mindx][oindx].label);
     strcat(buff, ";");
     if(oval == 1) strcat(buff,"1>");
