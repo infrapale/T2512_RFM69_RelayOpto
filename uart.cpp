@@ -8,7 +8,7 @@ uint8_t uart_read_uart(char *buff)
     {
         String Str;
         Str  = Serial.readStringUntil('\n');
-        Serial.println(Str);
+        // Serial.println(Str);
         if (Str.length()> 0)
         {
             Str.trim();

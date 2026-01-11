@@ -102,7 +102,7 @@ UART Command Syntax
 
     RelayOpto Examples Sent from Radio Module 1
       Switch on relay:
-        <Y1R1S3=1>    Switch relay 3 on (module Y1)
+        <Y1R1S3=1>   Switch relay 3 on (module Y1)
         <Y1R1S7=0>    Switch relay 7 off
         <Y1R1S8=T>    Toggle relay 3 on
 

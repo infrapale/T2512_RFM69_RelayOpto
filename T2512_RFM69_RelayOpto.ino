@@ -61,7 +61,7 @@ void modem_task(void);
 atask_st debug_print_handle        = {"Debug Print    ", 5000,0, 0, 255, 0, 1, debug_print_task};
 atask_st clock_handle              = {"Tick Task      ", 100,0, 0, 255, 0, 1, run_100ms};
 atask_st modem_handle              = {"Radio Modem    ", 100,0, 0, 255, 0, 1, modem_task};
-atask_st send_test_handle          = {"Send Test      ", 100,0, 0, 255, 0, 1, send_test_msg_task};
+//atask_st send_test_handle          = {"Send Test      ", 100,0, 0, 255, 0, 1, send_test_msg_task};
 
 #ifdef PRO_MINI_RFM69
 //AVR_Watchdog watchdog(4);
@@ -111,7 +111,7 @@ void loop()
     {
         io_led_flash(LED_INDX_BLUE, 20);
         rfm69_modem.get_msg(mbuff, BUFF_LEN, true);
-        Serial.println(mbuff);
+        // Serial.println(mbuff);
     }
 }
 
@@ -122,32 +122,31 @@ void modem_task(void)
 
 void send_test_msg_task(void)
 {
-    static uint32_t delay_timeout;
- 
-    switch(send_test_handle.state)
-    {
-        case 0:
-            send_test_handle.state = 10;
-            break;
-        case 10:
-            rfm69_modem.radiate("HelloWorld");
-            io_led_flash(LED_INDX_ONBOARD, 20);
-            delay_timeout = millis() + 4000;
-            send_test_handle.state = 20;
-            break;
-        case 20:
-            if (millis() > delay_timeout)
-            {   
-                // rfm69_modem.radiate_node_json("Dock;T_bmp1;9.1;-");
-                io_led_flash(LED_INDX_BLUE, 10);
-                delay_timeout = millis() + 4000;
-                send_test_handle.state = 30;
-            } 
-            break; 
-        case 30:
-            if (millis() > delay_timeout) send_test_handle.state = 10;
-            break;
-    }
+    // static uint32_t delay_timeout;
+    // switch(send_test_handle.state)
+    // {
+    //     case 0:
+    //         send_test_handle.state = 10;
+    //         break;
+    //     case 10:
+    //         rfm69_modem.radiate("HelloWorld");
+    //         io_led_flash(LED_INDX_ONBOARD, 20);
+    //         delay_timeout = millis() + 4000;
+    //         send_test_handle.state = 20;
+    //         break;
+    //     case 20:
+    //         if (millis() > delay_timeout)
+    //         {   
+    //             // rfm69_modem.radiate_node_json("Dock;T_bmp1;9.1;-");
+    //             io_led_flash(LED_INDX_BLUE, 10);
+    //             delay_timeout = millis() + 4000;
+    //             send_test_handle.state = 30;
+    //         } 
+    //         break; 
+    //     case 30:
+    //         if (millis() > delay_timeout) send_test_handle.state = 10;
+    //         break;
+    // }
 }
 
 void run_100ms(void)

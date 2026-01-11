@@ -7,7 +7,7 @@
 #define  NBR_OF_RELAY_MOD     2
 #define  NBR_OF_OPT_INP       2
 #define  OPTO_MAX_RADIATE_INTERVAL   (60000)
-#define  OPTO_MIN_RADIATE_INTERVAL   (4000)
+#define  OPTO_MIN_RADIATE_INTERVAL   (10000)
 
 extern Rfm69Modem      rfm69_modem;
 
@@ -202,7 +202,7 @@ void opto_task(void)
             opto_handle.state = 20;
             break;
         case 20: // request opto status
-            octrl.decoded_opto.to_addr = octrl.relay_module_indx + '1';
+            octrl.decoded_opto.to_addr = octrl.relay_module_indx + '0';
             opto_build_uart_msg(tx_buff, &octrl.decoded_opto);
             Serial.print(tx_buff);
             octrl.timeout = millis() + 1000;
@@ -215,12 +215,16 @@ void opto_task(void)
                     //Serial.println("Frame is OK");
                     opto_process_uart_msg(&octrl.decoded_rec);
                 }
-                opto_handle.state = 40;
+                opto_handle.state = 35;
+                octrl.timeout = millis() + 1000;
             }
             else {
                 if( millis() > octrl.timeout) opto_handle.state = 40;
             }           
             break;
+        case 35:
+             if( millis() > octrl.timeout) opto_handle.state = 40;
+             break;
         case 40:
             octrl.relay_module_indx++;
             if(octrl.relay_module_indx > 1) octrl.relay_module_indx = 0; 
@@ -244,9 +248,16 @@ void opto_radiate_change(uint8_t mindx, uint8_t oindx, uint8_t oval)
     strcat(buff,"<PIR;");
     strcat(buff, opto[mindx][oindx].label);
     strcat(buff, ";");
-    if(oval == 1) strcat(buff,"1>");
-    else strcat(buff,"0>");
-    Serial.println(buff);
+    switch(oval)
+    {
+        case 0:
+            strcat(buff,"1>"); break;
+        case 1:
+            strcat(buff,"2>"); break;
+        default:
+            strcat(buff,"#>"); break;
+    }
+    //Serial.println(buff);
     rfm69_modem.radiate(buff);
 }
 

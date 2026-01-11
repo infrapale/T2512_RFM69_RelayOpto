@@ -20,7 +20,7 @@
 #define LED_INDICATION
 
 #define MY_MODULE_TAG       'R'
-#define MY_MODULE_ADDR      '1'
+#define MY_MODULE_ADDR      '0'
 #define RELAY_MODULE_TAG    'Y'
 #define RELAY_MODULE_ADDR   '0'
 #define OPTO_FUNCTION       'O'
